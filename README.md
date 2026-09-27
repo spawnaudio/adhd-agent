@@ -8,6 +8,7 @@ The app saves notes locally, keeps up to three priorities, runs real focus timer
 
 ## Project
 
+- [Linear Project — ADHD Focus Assistant](https://linear.app/spawn-audio/project/adhd-focus-assistant-a8be64f259bc/overview): canonical Linear project for this repository.
 - [App direction](docs/APP_DIRECTION.md): source-agent mapping, decisions, and boundaries.
 - [Live agent review](docs/AGENT_REVIEW.md): feedback obtained from the existing companion.
 - [Validation](docs/VALIDATION.md): build, test, and visual checks.

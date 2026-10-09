@@ -61,6 +61,7 @@ struct ContentView: View {
                         case .capture: CaptureView(store: store)
                         case .focus: FocusView(store: store)
                         case .drafts: DraftsView(store: store)
+                        case .companion: CompanionChatView(store: store)
                         }
                         if let notice = store.notice {
                             HStack {

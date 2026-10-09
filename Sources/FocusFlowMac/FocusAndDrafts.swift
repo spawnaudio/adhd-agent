@@ -239,9 +239,13 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 22) {
             Eyebrow(text: "A little more help")
             Text("Your companion, connected.").font(.system(size: 29, design: .serif))
-            Text("Capture, planning, drafts, and the timer work on this Mac. Connect your existing Focus Flow agent when you want help with the next step or the words.")
+            Text("Your Focus & Flow agent is included in this app. Enable it for conversation, help with the next step, and drafting.")
                 .font(.system(size: 13)).foregroundStyle(Palette.muted).lineSpacing(5)
-            Toggle("Enable agent suggestions", isOn: $store.state.agentEnabled).toggleStyle(.switch)
+            Toggle("Enable Gemini companion", isOn: $store.state.agentEnabled).toggleStyle(.switch)
+                .onChange(of: store.state.agentEnabled) { _, enabled in
+                    if enabled { store.checkConnection() }
+                    else { store.stopCompanion() }
+                }
             VStack(alignment: .leading, spacing: 13) {
                 HStack {
                     Text("Local server port").font(.system(size: 12))
@@ -253,7 +257,7 @@ struct SettingsView: View {
                         .buttonStyle(QuietButtonStyle()).disabled(store.checkingConnection)
                 }
                 Text(store.connectionStatus).font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
-                Text("Start the companion with the included “Start Companion.command” launcher, then check the connection here.")
+                Text("The app starts its included companion automatically. Your Google configuration and chat sessions are kept on this Mac.")
                     .font(.system(size: 12)).foregroundStyle(Palette.muted).lineSpacing(4)
             }.padding(18).background(.white.opacity(0.7), in: RoundedRectangle(cornerRadius: 12))
             Label {

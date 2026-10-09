@@ -6,3 +6,11 @@ xcuserdata/
 .env
 .env.*
 !.env.example
+
+# Imported agent runtime and generated evaluation output
+companion/.venv/
+companion/**/__pycache__/
+companion/**/.adk/
+companion/.google-agents-cli/
+companion/artifacts/
+companion/.pytest_cache/

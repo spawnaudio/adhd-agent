@@ -1,0 +1,32 @@
+{
+  "eval_cases": [
+    {
+      "eval_case_id": "task_overwhelm_paralysis",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "I have a giant quarterly report due today, 5 unread Slack messages, and a messy inbox. I'm completely frozen and don't know where to begin."}]
+      }
+    },
+    {
+      "eval_case_id": "rabbit_hole_derailment",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "I just wasted 3 hours looking at mechanical keyboards instead of finishing my sprint ticket. I feel awful."}]
+      }
+    },
+    {
+      "eval_case_id": "daily_standup_request",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "Can you turn these notes into a quick 3-bullet daily standup for Slack: fixed auth bug, reviewed PR, drafted API docs, today deploying pipeline."}]
+      }
+    },
+    {
+      "eval_case_id": "focus_session_start",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "I want to start a 25-minute focus sprint on my proposal outline."}]
+      }
+    }
+  ]
+}

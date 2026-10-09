@@ -118,6 +118,7 @@ public struct WorkspaceState: Codable, Equatable, Sendable {
     public var energy = "Steady"
     public var agentEnabled = false
     public var agentPort = "8000"
+    public var conversation: CompanionConversation?
 
     public init() {}
 

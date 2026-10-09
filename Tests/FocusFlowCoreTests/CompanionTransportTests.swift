@@ -47,10 +47,43 @@ final class CompanionTransportTests: XCTestCase {
         XCTAssertEqual(paths[2].1, paths[0].1)
     }
 
+    func testChatCreatesMissingSessionThenReusesItWithoutDeleting() async throws {
+        var requests: [URLRequest] = []
+        var exists = false
+        let id = UUID()
+        AgentStub.handler = { request in
+            requests.append(request)
+            if request.httpMethod == "GET" { return (exists ? 200 : 404, "{}") }
+            if request.httpMethod == "POST", request.url?.path != "/run" { exists = true; return (200, "{}") }
+            return (200, #"[{"content":{"role":"model","parts":[{"text":"One small step."}]}}]"#)
+        }
+        let transport = try client()
+        let first = try await transport.chat(prompt: "First turn", conversationID: id)
+        let second = try await transport.chat(prompt: "Second turn", conversationID: id)
+        XCTAssertEqual(first, "One small step.")
+        XCTAssertEqual(second, "One small step.")
+        XCTAssertEqual(requests.map { $0.httpMethod! }, ["GET", "POST", "POST", "GET", "POST"])
+        XCTAssertTrue(requests.filter { $0.url?.path != "/run" }.allSatisfy { $0.url!.path.hasSuffix(id.uuidString) })
+    }
+
+    func testChatDoesNotReplaceSessionOnServerFailure() async throws {
+        var requests = 0
+        AgentStub.handler = { _ in requests += 1; return (503, "{}") }
+        do { _ = try await client().chat(prompt: "Help", conversationID: UUID()); XCTFail("Expected error") }
+        catch { XCTAssertEqual(error as? CompanionError, .http(503)) }
+        XCTAssertEqual(requests, 1)
+    }
+
     func testHTTPFailureIsNotTreatedAsSuggestion() async throws {
         AgentStub.handler = { _ in (503, "Service unavailable") }
         do { _ = try await client().suggest(prompt: "Help"); XCTFail("Expected error") }
         catch { XCTAssertEqual(error as? CompanionError, .http(503)) }
+    }
+
+    func testSlowReplyIsDistinguishedFromUnavailableServer() async throws {
+        AgentStub.handler = { _ in throw URLError(.timedOut) }
+        do { _ = try await client().chat(prompt: "Help", conversationID: UUID()); XCTFail("Expected timeout") }
+        catch { XCTAssertEqual(error as? CompanionError, .timedOut) }
     }
 
     func testUnavailableServerHasUsefulError() async throws {

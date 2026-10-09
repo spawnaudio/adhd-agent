@@ -4,7 +4,7 @@ import FocusFlowCore
 import SwiftUI
 
 enum AppSection: String, CaseIterable, Identifiable {
-    case plan = "Plan", capture = "Brain Dump", focus = "Focus", drafts = "Drafts"
+    case plan = "Plan", capture = "Brain Dump", focus = "Focus", drafts = "Drafts", companion = "Companion"
     var id: String { rawValue }
     var symbol: String {
         switch self {
@@ -12,6 +12,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .capture: return "tray"
         case .focus: return "circle.dotted.circle"
         case .drafts: return "square.and.pencil"
+        case .companion: return "bubble.left.and.bubble.right"
         }
     }
     var subtitle: String {
@@ -20,6 +21,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .capture: return "Get it out of your head. Give it a place."
         case .focus: return "Just this task. Just the next step."
         case .drafts: return "Find the words. Make them yours."
+        case .companion: return "A small next step. Someone to think with."
         }
     }
 }
@@ -51,6 +53,11 @@ final class AppStore: ObservableObject {
     @Published var focusMinutes = 15
     @Published var pauseMinutes = 5
     @Published var nextStepBuffer = ""
+    @Published var chatInput = ""
+    @Published var chatThinking = false
+    @Published var chatError: String?
+    let companionServer = CompanionServer()
+    var chatTask: Task<Void, Never>?
 
     private let repository: WorkspaceRepository?
     private var savingAllowed = true
@@ -81,6 +88,7 @@ final class AppStore: ObservableObject {
             }
         }
         selectedTaskID = state.priorities.first?.id
+        if state.agentEnabled && !sample { checkConnection() }
         ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect().sink { [weak self] date in self?.now = date }
     }
 
@@ -197,9 +205,12 @@ final class AppStore: ObservableObject {
         let port = state.agentPort
         requestTask = Task { [weak self] in
             do {
+                guard let self else { return }
+                try await self.companionServer.ensureRunning(port: port)
+                try Task.checkCancellation()
                 let reply = try await CompanionClient(port: port).suggest(prompt: prompt)
-                guard !Task.isCancelled, self?.suggestion?.id == request.id else { return }
-                self?.suggestionText = reply
+                guard !Task.isCancelled, self.suggestion?.id == request.id else { return }
+                self.suggestionText = reply
             } catch {
                 guard !Task.isCancelled, self?.suggestion?.id == request.id else { return }
                 self?.suggestionError = error.localizedDescription
@@ -227,12 +238,12 @@ final class AppStore: ObservableObject {
 
     func checkConnection() {
         checkingConnection = true
-        connectionStatus = "Checking…"
+        connectionStatus = "Starting your companion…"
         let port = state.agentPort
         Task {
             do {
-                try await CompanionClient(port: port).checkConnection()
-                connectionStatus = "Companion server is available."
+                try await companionServer.ensureRunning(port: port)
+                connectionStatus = "Your companion is ready."
             } catch { connectionStatus = error.localizedDescription }
             checkingConnection = false
         }

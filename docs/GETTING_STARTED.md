@@ -12,25 +12,31 @@
 
 The leaf in the Mac menu bar opens the app and shows the active timer. Closing the window keeps the app running there. Use **Focus & Flow → Quit Focus & Flow** to quit fully. Active deadlines are saved; elapsed time still counts while the app is closed or the Mac sleeps. No alert or sound is emitted while the app is quit.
 
-## Use the existing AI companion
+## Use the included Gemini companion
 
-The app's ordinary features work without AI. To request suggestions from the supplied agent:
+The app's ordinary features work without AI. To use the original Focus & Flow agent inside the app:
 
-1. Double-click **Start Companion.command** in this repository. Keep its Terminal window open while you want suggestions. It starts the existing agent on this Mac at port 8000, using its existing installation and Google configuration.
-2. Open **Companion settings** in the app.
-3. Select **Check connection**. The status should say the companion server is available.
-4. Enable **agent suggestions**, then select **Done**.
-5. Use **Help me sort it**, **Help me find a step**, or **Help me write it**. Review the response and edit it. **Use as next action** and **Use this draft** apply only that suggestion. Brain dump outlines can be copied; choose your actual priorities yourself.
+1. Open **Companion settings** and enable **Gemini companion**. The app starts its included backend automatically. The first start prepares the locked Python dependencies using your installed `uv`.
+2. Once the status says **Your companion is ready**, select **Done** and open **Companion** in the sidebar.
+3. Write a message and select **Send** (Command-Return). Follow-up messages share this conversation's agent session. The current conversation survives app relaunches.
+4. **Help me sort it**, **Help me find a step**, and **Help me write it** continue to provide isolated, editable suggestions. They do not attach your companion chat or apply changes automatically.
+5. Disable the companion to stop the backend started by the app. Quitting the app also stops its own backend; closing its window keeps the menu bar app running.
 
-Stopping the server: press **Control-C** in its Terminal window. Stopping the server doesn't affect saved notes or timers.
+The integrated agent source is `companion/`. The build includes the agent's source and dependency lock in `dist/Focus & Flow.app`; it excludes credentials, Python environments, generated logs, and old conversations. The original external agent folder was preserved as a backup.
 
-The launcher expects the existing agent at:
+### Local setup and storage
 
-`/Users/squeakyvermin/Developer/Google Enterprise/Agents/focus-flow-companion/`
+Install [uv](https://docs.astral.sh/uv/) if it is unavailable. Google configuration belongs in:
 
-For a different installation, set `FOCUS_FLOW_AGENT_DIR` before launching it. The launcher uses the existing environment without installing packages or changing its model. If the installation is missing, complete setup in that agent's own repository first.
+`~/Library/Application Support/FocusFlow/companion/.env`
 
-**Data flow:** Only explicit help requests send the relevant text to the companion. Gemini inference can use Google Cloud; a server on localhost does not make the model local. The source backend includes telemetry. Temporary API sessions are cleaned up on a best-effort basis, but this does not delete backend or provider logs. No Google credentials are stored in the Mac app.
+Use `companion/.env.example` as the setup reference. During this integration, the existing local Google configuration was copied here without changing its values. Existing Google application-default credentials remain in their normal location. New checkouts must supply their own configuration.
+
+The runtime Python environment, SQLite agent sessions, and `server.log` live in the same private Application Support directory. The app starts the server on loopback only. A manually started compatible server on the configured port can be reused; the app does not stop a server it did not launch.
+
+For command-line development, `Start Companion.command` now starts the in-repo agent. `FOCUS_FLOW_AGENT_DIR` can point to another copy of the integrated companion, and `FOCUS_FLOW_AGENT_PORT` can select a different local port.
+
+**Data flow:** Sending a chat message shares that conversation with Gemini. Explicit suggestion requests send their relevant text in separate temporary sessions. Your other notes and plan are not implicitly attached. Gemini inference uses your configured Google service; localhost does not make the model local. Existing backend/provider telemetry can apply. Starting a new conversation changes the native view; it does not delete Google/provider logs or earlier backend sessions.
 
 ## Where work is saved
 
@@ -48,6 +54,8 @@ To reopen a finished task, expand **Finished** in Plan and choose **Restore**. I
 | --- | --- |
 | Command-N | Open Brain Dump |
 | Command-1 / 2 / 3 / 4 | Plan / Brain Dump / Focus / Drafts |
+| Command-5 | Companion chat |
+| Command-Return | Send a companion message |
 | Command-0 | Show the app window |
 | Command-comma | Companion settings |
 | Command-W | Close the window; keep the menu bar app running |

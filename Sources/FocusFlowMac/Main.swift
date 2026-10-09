@@ -27,14 +27,24 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         if arguments.contains("--check-companion") {
             NSApplication.shared.setActivationPolicy(.prohibited)
             Task {
+                let server = CompanionServer()
                 do {
-                    let client = try CompanionClient(port: "8000")
+                    let port = arguments.firstIndex(of: "--port").flatMap { arguments.indices.contains($0 + 1) ? arguments[$0 + 1] : nil } ?? "8000"
+                    try await server.ensureRunning(port: port)
+                    let client = try CompanionClient(port: port)
                     try await client.checkConnection()
                     let reply = try await client.suggest(prompt: "We are turning you, Focus & Flow, into a native macOS assistant. The user chose four areas: Brain Dump, Plan, Focus, and Drafts. The first version saves raw thoughts; lets the user choose at most three priorities; shows one small next action; runs a local timer with deliberate pauses; and provides editable communication drafts to copy. Your suggestions are optional and never send messages or start timers automatically. Safari distraction checkpoints are a later milestone. Please help direct this app by giving up to three brief, practical interaction recommendations consistent with your existing companion principles. Do not give medical advice or invent implemented capabilities.")
                     print(reply)
+                    let conversationID = UUID()
+                    _ = try await client.chat(prompt: "For this test, remember the task code mint-leaf. Briefly acknowledge it.", conversationID: conversationID)
+                    let followUp = try await client.chat(prompt: "What task code did I just give you? Reply with the code only.", conversationID: conversationID)
+                    guard followUp.lowercased().contains("mint-leaf") else { throw CompanionError.emptyReply }
+                    print("Native conversation continuity passed.")
+                    server.stop()
                     exit(0)
                 } catch {
                     print("Companion check failed: \(error.localizedDescription)")
+                    server.stop()
                     exit(1)
                 }
             }
@@ -60,6 +70,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         showWindow()
         if let renderingDirectory { renderPreviews(to: renderingDirectory) }
     }
+
+    func applicationWillTerminate(_ notification: Notification) { store?.stopCompanion() }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

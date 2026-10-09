@@ -1,6 +1,6 @@
 # Focus & Flow
 
-A native macOS ADHD companion with four areas: **Brain Dump, Plan, Focus, and Drafts**. The supplied Focus Flow Companion agent informs its calm, small-step approach and can provide editable suggestions through its existing API.
+A native macOS ADHD companion with **Brain Dump, Plan, Focus, Drafts, and Companion chat**. The original Google ADK/Gemini Focus & Flow agent now lives in this repository under `companion/`, and is included in the Mac app. The app starts the local backend when you enable it or ask for help; the ADK playground is no longer needed for daily use.
 
 Open `dist/Focus & Flow.app`, or run `sh scripts/build-app.sh` to build it. See [Getting started](docs/GETTING_STARTED.md) for your first session, optional AI connection, and keyboard shortcuts.
 
@@ -13,7 +13,9 @@ The app saves notes locally, keeps up to three priorities, runs real focus timer
 - [Live agent review](docs/AGENT_REVIEW.md): feedback obtained from the existing companion.
 - [Validation](docs/VALIDATION.md): build, test, and visual checks.
 - `Sources/FocusFlowMac`: native interface, menu bar, and app state.
-- `Sources/FocusFlowCore`: session rules, persistence, and companion client.
+- `Sources/FocusFlowCore`: session rules, persistence, companion client, and local server lifecycle.
+- `companion/`: imported Gemini agent, tools, locked dependencies, documentation, and evaluation tests.
+- `Sources/FocusFlowMac/CompanionChat.swift`: native conversation interface.
 - `Tests/FocusFlowCoreTests`: timer, saved-data, and API transport tests.
 
 Open `Package.swift` in Xcode to develop the app. macOS 14 is the deployment target; the local prototype was built on Apple Silicon with macOS 27 beta. The app is ad-hoc signed for this Mac, not notarized for distribution.

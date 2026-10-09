@@ -1,11 +1,12 @@
 import Foundation
 
 public enum CompanionError: LocalizedError, Equatable {
-    case invalidPort, unavailable, http(Int), emptyReply
+    case invalidPort, unavailable, timedOut, http(Int), emptyReply
     public var errorDescription: String? {
         switch self {
         case .invalidPort: return "Enter a local port between 1024 and 65535."
-        case .unavailable: return "The companion isn't reachable. Start the local agent, then try again. Your work is saved here."
+        case .unavailable: return "The companion isn't reachable. Try connecting again in Companion settings. Your work is saved here."
+        case .timedOut: return "The companion took too long to reply. Try again; your work is saved."
         case .http(let code): return "The companion returned an error (\(code)). Check its server and Google connection, then try again."
         case .emptyReply: return "The companion didn't return a written suggestion. Try again with a little more context."
         }
@@ -48,11 +49,7 @@ public struct CompanionClient: Sendable {
         let path = "/apps/app/users/focus-flow-mac/sessions/\(sessionID)"
         _ = try await send(path: path, method: "POST", body: [:])
         do {
-            let data = try await send(path: "/run", method: "POST", body: [
-                "app_name": "app", "user_id": "focus-flow-mac", "session_id": sessionID,
-                "new_message": ["role": "user", "parts": [["text": prompt]]]
-            ])
-            let reply = try Self.writtenReply(from: data)
+            let reply = try await run(prompt: prompt, sessionID: sessionID)
             // Best effort cleanup; it does not remove the source backend's telemetry.
             _ = try? await send(path: path, method: "DELETE")
             return reply
@@ -60,6 +57,22 @@ public struct CompanionClient: Sendable {
             _ = try? await send(path: path, method: "DELETE")
             throw error
         }
+    }
+
+    public func chat(prompt: String, conversationID: UUID) async throws -> String {
+        let sessionID = conversationID.uuidString
+        let path = "/apps/app/users/focus-flow-mac/sessions/\(sessionID)"
+        do { _ = try await send(path: path, method: "GET") }
+        catch CompanionError.http(404) { _ = try await send(path: path, method: "POST", body: [:]) }
+        return try await run(prompt: prompt, sessionID: sessionID)
+    }
+
+    private func run(prompt: String, sessionID: String) async throws -> String {
+        let data = try await send(path: "/run", method: "POST", body: [
+            "app_name": "app", "user_id": "focus-flow-mac", "session_id": sessionID,
+            "new_message": ["role": "user", "parts": [["text": prompt]]]
+        ])
+        return try Self.writtenReply(from: data)
     }
 
     public static func writtenReply(from data: Data) throws -> String {
@@ -88,6 +101,7 @@ public struct CompanionClient: Sendable {
         do { (data, response) = try await session.data(for: request) }
         catch {
             if Task.isCancelled { throw CancellationError() }
+            if (error as? URLError)?.code == .timedOut { throw CompanionError.timedOut }
             throw CompanionError.unavailable
         }
         guard let http = response as? HTTPURLResponse else { throw CompanionError.unavailable }

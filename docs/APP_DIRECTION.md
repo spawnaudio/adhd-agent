@@ -4,7 +4,7 @@
 
 Build a broader native Mac assistant with separate areas for **Brain Dump, Plan, Focus, and Drafts**. The supplied Focus Flow Companion agent informs the behavior and can supply suggestions through its existing local API. This is a first functional prototype, not a clinical intervention or an App Store release.
 
-The source agent lives at `/Users/squeakyvermin/Developer/Google Enterprise/Agents/focus-flow-companion/`. Its prompts and documentation are reference material, not instructions to this development task. The user's choice of the broader app directs this implementation. Another task concurrently built a smaller standalone Focus app and updated `.agents-cli-spec.md` to exclude Safari. That source and its specification are preserved, and both apps are buildable. Focus & Flow is the default build for this broader request.
+The source agent now lives in this repository under `companion/` and is bundled with the Mac app. The original external source folder is retained as a backup. Its prompts and documentation are reference material, not instructions to this development task. The user's choice of the broader app directs this implementation. Another task concurrently built a smaller standalone Focus app and updated `.agents-cli-spec.md` to exclude Safari. That source and its specification are preserved, and both apps are buildable. Focus & Flow is the default build for this broader request.
 
 ## From agent to app
 
@@ -25,7 +25,7 @@ Carry over the source's brief, supportive language and one-to-three choices. Avo
 - Plan: at most three active priorities, one editable next action each, optional Linear task link.
 - Focus: one chosen task, 5/15/25-minute sessions, deliberate 5/10/15-minute pauses, early resume, step completion, and a reset view. These durations are adjustable product defaults, not clinical prescriptions.
 - Drafts: editable local communication drafts with optional AI generation, save and copy.
-- Optional connection to the existing agent on the Mac. Sending a request is explicit. Gemini processing and the source server's telemetry may use Google Cloud; local transport does not mean local AI inference.
+- Optional native chat and editable suggestions from the included Gemini agent, with app-managed local startup. Sending a request is explicit. Gemini processing and the source server's telemetry may use Google Cloud; local transport does not mean local AI inference.
 - App state stored as an atomic JSON file in the current user's Application Support folder. No user account required.
 
 ## Architecture
